@@ -1,0 +1,8 @@
+Hello
+<script>
+var dispatcher = new WebSocketRails('localhost:3000/websocket');
+var channel = dispatcher.subscribe('broadcast');
+channel.bind('notice', function(data) {
+  console.log('channel event received: ' + data);
+});
+</script>

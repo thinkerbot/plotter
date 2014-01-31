@@ -19,6 +19,9 @@ Plotter::Application.configure do
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
+  # For websocket-rails
+  # https://github.com/websocket-rails/websocket-rails/wiki/Installation-and-Setup
+  config.middleware.delete Rack::Lock
 
   # Debug mode disables concatenation and preprocessing of assets.
   # This option may cause significant delays in view rendering with a large

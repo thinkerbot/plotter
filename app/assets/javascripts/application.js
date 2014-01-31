@@ -13,3 +13,4 @@
 //= require jquery
 //= require d3.v3.min
 //= require_tree .
+//= require websocket_rails/main
