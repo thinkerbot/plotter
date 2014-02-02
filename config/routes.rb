@@ -6,6 +6,7 @@ Plotter::Application.routes.draw do
   root 'nodes#index'
   get 'nodes' => 'nodes#index'
   get 'nodes/relay' => 'nodes#relay'
+  get 'nodes/data' => 'nodes#data'
 
   # Example of regular route:
   # get 'products/:id' => 'catalog#view'

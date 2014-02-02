@@ -1,8 +1,153 @@
-Hello
+<h1>Plot</h1>
+<svg class="plot" />
 <script>
 var dispatcher = new WebSocketRails('localhost:3000/websocket');
 var channel = dispatcher.subscribe('broadcast');
 channel.bind('notice', function(data) {
   console.log('channel event received: ' + data);
 });
+</script>
+<style>
+  body {
+    font: 10px sans-serif;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .x.axis path {
+    display: none;
+  }
+
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+  }
+</style>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script>
+  plot = {}
+  plot.margin = {top: 20, right: 80, bottom: 30, left: 50};
+  plot.legend_width = 200;
+  plot.width  = 960 - plot.margin.left - plot.margin.right;
+  plot.height = 500 - plot.margin.top  - plot.margin.bottom;
+
+  plot.x = d3.time.scale()
+      .range([0, plot.width]);
+
+  plot.y = d3.scale.linear()
+      .range([plot.height, 0]);
+
+  plot.color = d3.scale.category20();
+
+  plot.xAxis = d3.svg.axis()
+      .scale(plot.x)
+      .orient("bottom");
+
+  plot.yAxis = d3.svg.axis()
+      .scale(plot.y)
+      .orient("left");
+
+  plot.line = d3.svg.line()
+      .interpolate("basis")
+      .x(function(d) { return plot.x(d.x); })
+      .y(function(d) { return plot.y(d.y); });
+
+  plot.svg = d3.select("svg.plot")
+      .attr("width",  plot.width  + plot.margin.left + plot.margin.right + plot.legend_width)
+      .attr("height", plot.height + plot.margin.top  + plot.margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + plot.margin.left + "," + plot.margin.top + ")");
+
+  plot.legend = plot.svg.append("g")
+    .attr("x", plot.width + 20)
+    .attr("y", 0)
+    .attr("height", plot.height)
+    .attr("width", plot.legend_width);
+
+  $.getJSON("nodes/data", function(result) {
+    var desc = result.desc;
+    var data = result.data;
+
+    plot.json = result;
+    plot.color.domain(desc.y);
+
+    plot.parseDate = d3.time.format(desc.datetime_format).parse;
+    data.forEach(function(d) {
+      d.x = plot.parseDate(d.x);
+    });
+
+    var series_data = plot.color.domain().map(function(name, index) {
+      return {
+        name: name,
+        values: data.map(function(d) {
+          return {x: d.x, y: +d["y" + index]};
+        })
+      };
+    });
+
+    plot.x.domain(d3.extent(data, function(d) { return d.x; }));
+
+    plot.y.domain([
+      d3.min(series_data, function(c) { return d3.min(c.values, function(v) { return v.y; }); }),
+      d3.max(series_data, function(c) { return d3.max(c.values, function(v) { return v.y; }); })
+    ]);
+
+    plot.svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + plot.height + ")")
+        .call(plot.xAxis)
+       .append("text")
+         .text(desc.x_label);
+
+    plot.svg.append("g")
+        .attr("class", "y axis")
+        .call(plot.yAxis)
+      .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text(desc.y_label);
+
+    var series = plot.svg.selectAll(".series")
+        .data(series_data)
+      .enter().append("g")
+        .attr("class", "series");
+
+    series.append("path")
+        .attr("class", "line")
+        .attr("d", function(d) { return plot.line(d.values); })
+        .style("stroke", function(d) { return plot.color(d.name); });
+
+    plot.legend.selectAll('g').data(series_data)
+        .enter()
+        .append('g')
+        .each(function(d, i) {
+          var g = d3.select(this);
+  
+          g.append("rect")
+            .attr("x", plot.width + 20)
+            .attr("y", i *  20)
+            .attr("width", 10)
+            .attr("height", 10)
+            .style("fill", plot.color(d.name));
+
+          g.append("text")
+            .attr("x", plot.width + 20 + 15)
+            .attr("y", i *  20 + 8)
+            .attr("height",30)
+            .attr("width",100)
+            .text(d.name);
+
+        });
+  });
+
+  $( document ).ready();
 </script>
